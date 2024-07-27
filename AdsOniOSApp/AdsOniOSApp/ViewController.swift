@@ -11,13 +11,13 @@ import GoogleMobileAds
 class ViewController: UIViewController, GADFullScreenContentDelegate {
 
     private var interstitial: GADInterstitialAd?
-    private var videoAd: GADInterstitialAd?
+    private var rewardedAd: GADRewardedAd?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        // Load both interstitial and rewarded video ads
         loadInterstitialAd()
-        loadVideoAd()
+        loadRewardedAd()
     }
 
     private func loadInterstitialAd() {
@@ -36,19 +36,19 @@ class ViewController: UIViewController, GADFullScreenContentDelegate {
         }
     }
 
-    private func loadVideoAd() {
-        let videoAdUnitID = "ca-app-pub-3940256099942544/1712485313"
+    private func loadRewardedAd() {
+        let rewardedAdUnitID = "ca-app-pub-3940256099942544/1712485313"
         
-        GADInterstitialAd.load(
-            withAdUnitID: videoAdUnitID,
+        GADRewardedAd.load(
+            withAdUnitID: rewardedAdUnitID,
             request: GADRequest()
         ) { ad, error in
             if let error = error {
-                print("Failed to load video ad with error: \(error.localizedDescription)")
+                print("Failed to load rewarded ad with error: \(error.localizedDescription)")
                 return
             }
-            self.videoAd = ad
-            self.videoAd?.fullScreenContentDelegate = self
+            self.rewardedAd = ad
+            self.rewardedAd?.fullScreenContentDelegate = self
         }
     }
 
@@ -62,22 +62,34 @@ class ViewController: UIViewController, GADFullScreenContentDelegate {
     }
 
     @IBAction func playVideoAdClick(_ sender: Any) {
-        if let videoAd = videoAd {
-            videoAd.present(fromRootViewController: self)
+        if let rewardedAd = rewardedAd {
+            rewardedAd.present(fromRootViewController: self) {
+                self.showRewardAlert()
+            }
         } else {
-            print("Video ad wasn't ready")
-            loadVideoAd()
+            print("Rewarded ad wasn't ready")
+            loadRewardedAd()
         }
     }
-    
+
+    private func showRewardAlert() {
+        let alert = UIAlertController(
+            title: "Congratulations!",
+            message: "You've earned your reward!",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+
     // MARK: - GADFullScreenContentDelegate
 
     func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
         print("Failed to present ad with error: \(error.localizedDescription)")
         if ad === interstitial {
             loadInterstitialAd()
-        } else if ad === videoAd {
-            loadVideoAd()
+        } else if ad === rewardedAd {
+            loadRewardedAd()
         }
     }
 
@@ -85,9 +97,10 @@ class ViewController: UIViewController, GADFullScreenContentDelegate {
         print("Ad was dismissed")
         if ad === interstitial {
             loadInterstitialAd()
-        } else if ad === videoAd {
-            loadVideoAd()
+        } else if ad === rewardedAd {
+            loadRewardedAd()
+            showRewardAlert()
         }
     }
-}
 
+}
